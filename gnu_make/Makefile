@@ -1,6 +1,6 @@
 .PHONY: all
 
-all: check_version echo_stuff scoping bams
+all: check_version echo_stuff scoping bams autovar
 scoping: scoping_global scoping_local scoping_check pattern
 
 need := 3.81
@@ -54,4 +54,18 @@ p%: VAR = set with wildcard
 
 $(RESULTDIR)/%.bam: $(fastas)
 	@echo $@
+
+# https://www.gnu.org/software/make/manual/html_node/Automatic-Variables.html
+# https://stackoverflow.com/questions/12284584/can-i-obtain-just-the-second-prerequisite-in-gnu-make
+NUM = one two three four five six seven eight nine ten
+.PHONY: $(NUM)
+autovar: $(NUM)
+	@echo -e
+	@echo $$\@ is the name of the target: $@
+	@echo $$\< is the name of the first prereq: $<
+	@echo $$\^ is the name of all prereqs: $^
+	@echo $$\? is the name of all prereqs newer than the target: $?
+	@echo $$\(word 2,$$\^\) is the second prereq: $(word 2,$^)
+	@echo $$\(word 7,$$\^\) is the seventh prereq: $(word 7,$^)
+	@echo $$\(filter-out $$\<\,$$\^\) filters out the first prereq: $(filter-out $<,$^)
 
