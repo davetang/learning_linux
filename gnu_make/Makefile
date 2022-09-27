@@ -1,6 +1,6 @@
 .PHONY: all
 
-all: check_version echo_stuff scoping bams autovar
+all: check_version echo_stuff scoping bams autovar iterate_list
 scoping: scoping_global scoping_local scoping_check pattern
 
 need := 3.81
@@ -10,10 +10,6 @@ DATADIR := data
 RESULTDIR := result
 
 fastas := $(wildcard $(DATADIR)/*.fa)
-# https://www.gnu.org/software/make/manual/html_node/Text-Functions.html
-# https://stackoverflow.com/questions/1633527/wildcard-targets-in-a-makefile
-# $(patsubst pattern,replacement,text)
-bams: $(patsubst %, $(RESULTDIR)/%.bam, $(basename $(notdir $(fastas)) .fa))
 
 check_version:
 	@echo Make version $(MAKE_VERSION) is $(if $(ok),,not) compatiable with this Makefile
@@ -32,7 +28,9 @@ override USER := Mr. President
 echo_stuff:
 	@echo Hello $(USER) your home directory is $(HOME)
 	@echo this Makefile was created on $(today)
-	@echo $(fastas)
+	@echo with parentheses $(fastas)
+	@echo with braces ${fastas}
+	@echo ${fastas2}
 
 VAR = global scope
 scoping_global:
@@ -52,8 +50,26 @@ pattern:
 # is like *)
 p%: VAR = set with wildcard
 
-$(RESULTDIR)/%.bam: $(fastas)
-	@echo $@
+# this uses all the FASTAs as prereqs for each BAM file
+# $(RESULTDIR)/%.bam: $(fastas)
+# 	@echo $@ $^
+#
+# this is what I want
+$(RESULTDIR)/%.bam: $(DATADIR)/%.fa
+	@echo $@ $^
+
+# https://www.gnu.org/software/make/manual/html_node/Text-Functions.html
+# https://stackoverflow.com/questions/1633527/wildcard-targets-in-a-makefile
+# $(patsubst pattern,replacement,text)
+bams: $(patsubst %, $(RESULTDIR)/%.bam, $(basename $(notdir $(fastas)) .fa))
+	@echo $@ $^
+
+# this works for iterating over a list but I want to use a Makefile approach
+iterate_list:
+	@echo -e; \
+	for f in $(fastas); \
+		do echo $$f; \
+	done
 
 # https://www.gnu.org/software/make/manual/html_node/Automatic-Variables.html
 # https://stackoverflow.com/questions/12284584/can-i-obtain-just-the-second-prerequisite-in-gnu-make
