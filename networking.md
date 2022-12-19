@@ -56,6 +56,46 @@ In most Internet tools, the Classless Inter-Domain Routing (CIDR) notation is us
 |  Long form  |            Binary form              | CIDR form |
 | ----------- | ----------------------------------- | --------- |
 | 255.0.0.0   | 11111111 00000000 00000000 00000000 |     /8    |
-| s55.240.0.0 | 11111111 11110000 00000000 00000000 |     /12   |
+| 255.240.0.0 | 11111111 11110000 00000000 00000000 |     /12   |
 | 255.255.0.0 | 11111111 11111111 00000000 00000000 |     /16   |
+
+#### Routes and the Kernel Routing Table
+
+Connecting Internet subnets is mostly a process of sending data through hosts connected to more than one subnet. The Linux kernel distinguishes between different kinds of destinations (LAN vs. WAN) by using a _routing table_ to determine its routing behaviour. Use `ip route show` to show the routing table; the output will display each line as a routing rule.
+
+```bash
+ip route show
+# default via 10.23.2.1 dev enp0s31f6 proto static metric 100
+# 10.23.2.0/24 dev enp0s31f6 proto kernel scope link src 10.23.2.4 metric 100
+```
+
+The output of the first line has the destination network `default`. This rule, which matches any host, is also called the _default route_. The mechanism is via `10.23.2.1`, which indicates that traffic using the default route is to be sent to `10.23.2.1`; `dev enp0s31f6` indicates that the physical transmission will happen on that network interface.
+
+The `default` entry in the routing table has special significance because it matches any address on the Internet; in CIDR notation, it's `0.0.0.0/0` for IPv4. This is the default route, and the address configured as the intermediary in the default route is the _default gateway_. When no other rules match, the default route always does, and the default gateway is where you send messages when there is no other choice. On most networks with a netmask of `/24` (255.255.255.0), the router is usually at address 1 of the subnet but this is simply a convention and not a hard rule.
+
+The output on the second line shows the destination network `10.23.2.0/24`, which is the host's local subnet. This rule says that the host can reach the local subnet directly through its network interface, indicated by the `dev enp0s31f6` mechanism label.
+
+When a host wants to send something to `10.23.2.132`, which matches both rules in the routing table, the order in the routing table does not matter. The kernel will choose the longest destination prefix that matches. `10.23.2.0/24` matches but its prefix is 24 bits long whereas `0.0.0.0/0` matches, but its prefix is 0 bits long because it has no prefix. Therefore the rule for `10.23.2.0/24` takes priority.
+
+#### Ipv6 addresses and networks
+
+IPv4 addresses consist of 32 bits (4 bytes) yielding roughly 4.3 billion addresses, which is insufficient for the number of devices currently connected to the Internet. An IPv6 address has 128 bits, 16 bytes arranged in eight sets of 2 bytes. In long form an address is written as:
+
+```
+2001:0db8:0a0b:12f0:0000:0000:0000:8b6e
+```
+
+The representation is in hexadecimal and there are different methods of abbreviating the representation. Leading zeros can be omitted and one-and only one- set of contiguous zero groups can be concatenated. The previous address can be rewritten as:
+
+```
+2001:db8:a0b:12f0::8b6e
+```
+
+Subnets are still denoted in CIDR notation and they often cover half of the available bits in the address space (`/64`). The portion of the address space that's unique for each host is called the _interface ID_. Hosts normally have at least two IPv6 addresses; the first, which is valid across the Internet, is called the _global unicast address_ and the second, for the local network, is called the _link-local address_. Link-local addresses always have an `fe80::/10` prefix, followed by an all-zero 54 bit network ID, and end with a 64-bit interface ID. Global unicast addresses have the prefix `2000::/3`.
+
+To view IP addresses in IPv6 use the `-6` argument
+
+```bash
+ip -6 address show
+```
 
