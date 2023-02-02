@@ -412,3 +412,84 @@ read-only:
 This command assumes that the correct device listing for `/` is in
 `/etc/fstab`. If it isn't, you need to specify the device as an additional
 option.
+
+Linux keeps a permanent list of filesystems and options in `/etc/fstab` and is
+used to mount filesystems at boot time. The file is in plaintext format and
+below is an example.
+
+```
+UUID=70ccd6e7-6ae6-44f6-812c-51aab8036d29 / ext4 errors=remount-ro 0 1
+UUID=592dcfd1-58da-4769-9ea8-5f412a896980 none swap sw 0 0
+/dev/sr0 /cdrom iso9660 ro,user,nosuid,noauto 0 0
+```
+
+Each line corresponds to one filesystem and is made up of six fields.
+
+1. The device or UUID.
+2. The mount point.
+3. The filesystem type.
+4. Long options separated by commas.
+5. Backup information for use by the `dump` command, which is obsolete and
+should always be set to 0
+6. The filesystem integrity test order. To ensure that `fsck` always runs on
+the root first, always set this to 1 for the root filesystem and 2 for any
+other locally attached filesystems on a hard disk or SSD. Use 0 to disable
+the bootup check for every other filesystem, including read-only devices,
+swap, and the `/proc` filesystem.
+
+Some options such as `errors` or `noauto` are specific to the `/etc/fstab`
+file. These options are defined below:
+
+* **defaults** - This sets the `mount` defaults: read-write mode, enable device
+files, executables, the setuid bit, etc.
+* **errors** - This ext2/3/4-specific parameter sets the kernel behaviour when
+the system has trouble mounting a filesystem. The default is normally
+`errors=continue`, meaning that the kernel should return an error code and keep
+running. To have the kernel try the mount again in read-only mode, use
+`errors=remount-ro`. The `errors=panic` setting tells the kernel (and your
+system) to halt when there's a problem with the mount.
+* **noauto** - This option tells a `mount -a` command to ignore the entry. Use
+this to prevent a boot-time mount of a removable-media device, such as a flash
+storage device.
+* **user** - This option allows unprivileged users to run `mount` on a
+particular entry, which can be handy for allowing certain kinds of access to
+removable media.
+
+When using `mount`, you can take some shortcuts if the filesystem you want to
+work with is in `/etc/fstab`. For example using the example above, you could
+simply run `mount /cdrom`. To simultaneously mount all entries in `/etc/fstab`
+that do not contain the `noauto` option use:
+
+    mount -a
+
+Filesystem errors are usually due to abrupt system shutdowns. In such cases,
+the previous filesystem cache in memory may not match the data on the disk and
+the system may have been in the process of altering the filesystem when it was
+not properly shutdown. Although many filesystems support journals to make
+filesystem corruption far less common, you should always shut down the system
+properly. Regardless of the filesystem in use, filesystem checks are still
+necessary every now and then to make sure that everything is still in order.
+
+`fsck` is used to check a filesystem and there's a different version of `fsck`
+for each filesystem type that Linux supports. For example, when run on an
+Extended filesystem series, `fsck` recognises the filesystem type and starts
+the `e2fsck` utility.
+
+**Never use `fsck` on a mounted filesystem** because the kernel may alter the
+disk data as you run the check, causing runtime mismatches that can crash your
+system and corrupt files.
+
+To run `fsck` in interactive manual mode, provide the device or mount point as
+the argument. `fsck` prints verbose status reports on its passes.
+
+    fsck /dev/sdb1
+
+If `fsck` finds a problem in manual mode, it stops and asks a question relevant
+to fixing the problem. These questions deal with the internal structure of the
+filesystem, such as reconnecting loose inodes (inodes are building blocks of
+the filesystem) and clearing blocks. When `fsck` asks about reconnecting an
+inode, it has found a file that doesn't appear to have a name. When
+reconnecting such a file, `fsck` places the file int he _lost+found_ directory
+in the filesystem, with a number as the filename.
+
+Run `fsck -n` to check the filesystem without modifying anything.
