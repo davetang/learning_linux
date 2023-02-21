@@ -207,6 +207,119 @@ To view IP addresses in IPv6 use the `-6` argument
 ip -6 address show
 ```
 
+### Basic ICMP and DNS Tools
+
+The Internet Control Message Protocol (ICMP) can help you find problems with
+connectivity and routing. ICMP is a transport layer protocol used to configure
+and diagnose Internet networks; it differs from other transport layer protocols
+in that it does not carry any true user data and thus there is no application
+layer above it. The Domain Name Service (DNS) system maps names to IP addresses
+and is an application layer protocol used to map human-readable names to
+Internet addresses.
+
+#### `ping`
+
+`ping` is one of the most basic network debugging tools. It sends ICMP echo
+request packets to a host that asks a recipient host to return the packet to
+the sender. If the recipient host receives the packet and is configured to
+reply, it sends an ICMP echo response packet in return.
+
+The most important part of the output are the sequence number (`icmp_seq`) and
+the round-trip time (`time`). A gap in the sequence numbers usually means
+there's some kind of connectivity problem.
+
+#### DNS and host
+
+To find the IP address behind a domain name, use `host`.
+
+```bash
+host www.example.com
+```
+
+### The Physical Layer and Ethernet
+
+The Internet is a software network and because of this, it works on almost any
+kind of computer, operating system, and physical network. However, in order to
+communicate with another computer, a network layer on top of some kind of
+hardware is necessary. This interface is the physical layer.
+
+The most common kind of physical layer is an Ethernet network. The IEEE 802
+family of standards documentation defines many different kinds of Ethernet
+networks, from wired to wireless, but they all have a few things in common:
+
+* All devices on an Ethernet network have a Media Access Control (MAC) address,
+  sometimes called a hardware address. This address is independent of a host's
+  IP address, and it is unique to the host's Ethernet network (but not
+  necessarily a larger software network such as the Internet).
+* Devices on an Ethernet network send messages in _frames_, which are wrappers
+  around the data sent. A frame contains the origin and destination MAC
+  addresses.
+
+When configuring a network interface, you link the IP address settings from the
+Internet side with the hardware identification on the physical device side.
+Network interfaces usually have names that indicate the kind of hardware
+underneath, such as _enp0s31f6_ (an interface in a PCI slot). A name like this
+is called a _predictable network interface device name_, because it remains the
+same after a reboot. At boot time, interfaces have traditional names such as
+_eth0_ (the first Ethernet card in the computer) and _wlan0_ (a wireless
+interface), but on most machines running `systemd`, they are quickly renamed.
+
+`ip addr show` shows the network interface settings and the output is organised
+by interface.
+
+Each network interface gets a number and interface 1 is almost always the
+loopback. A flag **UP** indicates that the interface is working. Although `ip`
+shows some hardware information, it is designed primarily for viewing and
+configuring the software layers attached to the interfaces. To dig deeper into
+the hardware and physical layer behind a network interface, use something like
+`ethtool` to display or change the settings on Ethernet cards.
+
+### Introduction to Network Interface Configuration
+
+The basic elements that go into the lower levels of a network stack include:
+
+* The physical layer
+* The network (internet) layer
+* The Linux kernel's network interfaces
+
+In order to combine these pieces to connect a Linux machine to the internet,
+the following needs to be performed:
+
+1. Connect the network hardware and ensure that the kernel has a driver for it.
+   If the driver is present, `ip addr show` includes an entry for the device,
+   even if it has not been configured.
+2. Perform any additional physical layer setup, such as choosing a network name
+   or password.
+3. Assign IP address(es) and subnets to the kernel network interface so that
+   the kernel's device drivers (physical layer) and internet subsystems
+   (internet layer) can communicate with each other.
+4. Add any additional necessary routes, including the default gateway.
+
+#### Manually Configuring Interfaces
+
+This is typically something you'd only do when experimenting with your system. You can bind an interface to the internet layer with the `ip` command. To add an IP address and subnet for a kernel network interface:
+
+```bash
+ip addr add address/subnet dev interface
+```
+
+`interface` is the name of the interface, such as _enp0s31f6_ or _eth0_.
+
+Add routes, which is typically setting up the default gateway.
+
+```bash
+ip route add default via gw-address dev interface
+```
+
+`gw-address` is the IP address of your default gateway; it _must_ be an address
+in a locally connected subnet assigned to one of your network interfaces.
+
+To remove the default gateway.
+
+```bash
+ip route del default
+```
+
 TBC.
 
 ### Routers
