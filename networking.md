@@ -320,6 +320,74 @@ To remove the default gateway.
 ip route del default
 ```
 
+### Network Configuration Managers
+
+The most widely used option on desktops and notebooks for automatically
+configuring networks is NetworkManager. There is an add-on to `systemd`, called
+`systemd-networkd`, that can do basic network configuration and is useful for
+machines that do not need much flexibility (such as servers) but it does not
+have the dynamic capabilities of NetworkManager. Other network configuration
+management systems are mainly targeted for smaller embedded systems, such as
+OpenWRT's `netifd`, Android's ConnectivityManager service, ConnMan, and Wicd.
+
+NetworkManager is a daemon that the system starts upon boot. Like most daemons,
+it does not depend on a running desktop component. Its job is to listen to
+events from the system and users and to change the network configuration based
+on a set of rules.
+
+NetworkManager maintains two basic levels of configuration. The first is a
+collection of information about available hardware devices, which it normally
+collects from the kernel and maintains by monitoring udev over the Desktop Bus
+(D-Bus). The second configuration level is a more specific list of
+_connections_: hardware devices and additional physical and network layer
+configuration parameters. For example, a wireless network can be represented as
+a connection.
+
+To activate a connection, NetworkManager often delegates the tasks to other
+specialised network tools and daemons, such as `dhclient`, to get internet
+layer configuration from a locally attached physical network. NetworkManager
+uses plug-ins to interface with network configuration tools and schemes since
+they vary amount distributions.
+
+Upon startup, NetworkManager gathers all available network device information,
+searches its list of connections, and then decides to try to activate one.
+Here's how it makes that decision for Ethernet interfaces:
+
+1. If a wired connection is available, try to connect using it, otherwise try
+   the wireless connections.
+2. Scan the list of available wireless networks. If a network is available that
+   you have previously connected to, NetworkManager will try it again.
+3. If more than one previously connected wireless network is available, select
+   the most recently connected.
+
+After establishing a connection, NetworkManager maintains it until the
+connection is lost, a better network becomes available, or the user forces a
+change.
+
+For a quick summary of your current connection status, use `nmcli` with no
+arguments. A list of interfaces and configuration parameters will be shown. The
+`nmcli` command allows you to control NetworkManager from the command line.
+Check out `man nmcli-examples` to get usage examples of `nmcli`. The utility
+`nm-online` will tell you whether the network is up or down; if the network is
+up, the command returns 0 as its exit code and non-zero otherwise.
+
+```bash
+nm-online
+# Connecting...............   30s [online]
+
+echo $?
+# 0
+```
+
+NetworkManager's general configuration directory is usually in
+`/etc/NetworkManager` and there are several different kinds of configuration.
+The general configuration file is `NetworkManager.conf` and the format is
+similar to the XDG-style `.desktop` and Microsoft `.ini` files, with key-value
+parameters falling into different sections. You will find that nearly every
+config file has a `[main]` section that defines the plug-ins to use. For the
+most part, you will not need to change `NetworkManager.conf` because the more
+specific config options are found in other files.
+
 TBC.
 
 ### Routers
