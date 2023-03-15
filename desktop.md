@@ -5,6 +5,17 @@ known as Xorg, after its maintaining organisation). However many distributions
 have transitioned to a software set based on the Wayland protocol to build a
 windowing system.
 
+X is based on a [client-server
+  model](https://www.cs.mcgill.ca/~rwest/wikispeedia/wpcd/wp/x/X_Window_System_protocols_and_architecture.htm)
+but the server runs on the user's computer, while the clients run on the remote
+machine; this is the reverse of common client-server systems.
+
+> The communication protocol between server and client runs
+  network-transparently: the client and server may run on the same machine or
+  on different ones, possibly with different architectures and operating
+  systems. A client and server can communicate securely over the Internet by
+  tunneling the connection over an encrypted connection.
+
 ### Framebuffers
 
 At the bottom of any graphical display mechanism is the _framebuffer_, which is
