@@ -51,9 +51,9 @@ Configuration Protocol (DHCP).
     config.vm.network "private_network", type: "dhcp"
 
 A [provider](https://developer.hashicorp.com/vagrant/docs/providers) is a
-  plug-in that knows how to create and manage a VM. Vagrant supports multiple
-  providers to manage different types of machines. Each provider has common
-  options such as CPU, disk, etc.
+plug-in that knows how to create and manage a VM. Vagrant supports multiple
+providers to manage different types of machines. Each provider has common
+options such as CPU, disk, etc.
 
 ```
 config.vm.provider "virtualbox" do |vb|
@@ -72,7 +72,141 @@ The four most used Vagrant commands are:
 
 Use `--help` to find out more information about each (sub)command.
 
-## Useful links
+## Containerisation
 
-* [Configure EC2 using
-Vagrant](https://blog.knoldus.com/how-to-configure-aws-ec2-instance-using-vagrant/)
+A container is the running instance of a container image. Containers provide a
+means to run code in a predictable and isolated manner. The current _de facto_
+standard in containerisation is Docker. The Docker framework consists of a
+Docker daemon (server), a `docker` command line clients, and other tools.
+Docker uses Linux kernel features to build and run containers and partitions
+the operating system into what appears to be separate isolated servers.
+
+A `Dockerfile` describes how to build a container image that is made up of
+different layers. Container images can be distributed and served from a service
+called a registry, such as [Docker Hub](https://hub.docker.com/).
+
+Docker can stack different layers on top of each other because it uses the
+_union filesystem_ (UFS), which allows multiple filesystems to come together
+and create what looks like a single filesystem.
+
+### Namespaces and Cgroups
+
+Docker containers are separated from the host by using boundaries and limited
+views called _namespaces_ and _cgroups_. These are kernel features that limit
+what a container can see and use. Namespaces restrict global system resources
+for a container and without namespaces, a container could have free run of the
+system.
+
+Common kernel namespaces include the following:
+
+* Process ID (PID) - Isolates the process IDs.
+* Network (net) - Isolates the network interface stack.
+* UTS - Isolates the hostname and domain name.
+* Mount (mnt) - Isolates the mount points.
+* IPC - Isolates the SysV-style interprocess communication.
+* User - Isolates the user and group IDs.
+
+Cgroups manage and measure the resources a container can use. They set
+resources limitations and prioritisation for processes. The most common
+resources Docker sets with cgroups are:
+
+* Memory
+* CPU
+* Disk I/O
+* Network
+
+Cgroups make it possible to stop a container from using up all the resources of
+the host.
+
+Namespaces limit what can be seen and cgroups limit what can be used.
+
+### Container orchestration
+
+Kubernetes or K8s is an open-source orchestration system used to manage
+containers. Kubernetes comes preloaded with some useful patterns (such as
+networking, role-based access control, and versioned APIs), but it is meant to
+be a foundational framework for building infrastructure and tools.
+
+Kubernetes (which means _helmsman_ [a person who steers a ship or boat] in
+Greek) evolved from Borg and Omega both developed at Google. It was
+open-sourced in 2014 and has great community support.
+
+A Kubernetes cluster consists of one or more control plane nodes and one or
+more worker nodes. A _node_ can be a cloud VM or a Raspberry Pi server. The
+_control plane nodes_ handle things like the Kubernetes API calls, the cluster
+state, and the scheduling of containers. The core services (such as the API,
+etcd, and the scheduler) run on the control plane. The _worker nodes_ run the
+containers and resources that are scheduled by the control plane.
+
+_Node affinity_ is when an application has preference for a specific worker
+node (that has been tuned/setup for a specific use case).
+
+### Kubernetes Workload Resources
+
+A _resource_ is a type of object that encapsulates state and intent. If a
+workload running on Kubernetes were a car, the resources would describe the
+parts of the car; you could set your car up with two seats and four doors. You
+would not have to understand how to make a seat or door; Kubernetes will
+maintain the given count for both. Kubernetes resources are defined in a file
+called a _manifest_.
+
+Below are commonly used Kubernetes resources in a modern application stack.
+
+* Pods - _Pods_ are the smallest building blocks in Kubernetes and they form
+  the foundation for working with containers. A Pod is made up of one or more
+  containers that share network and storage resources. Each container can
+  connect to the other containers and all containers can share a directory
+  between them by a mounted volume. However, you won't deploy Pods directly but
+  instead they will be incorporated into a higher-level abstraction layer like
+  a ReplicaSet.
+* ReplicaSet - A ReplicaSet resource is used to maintain a fixed number of
+  identical Pods. If a Pod is killed or deleted, the ReplicaSet will create
+  another Pod to take its place. You'll only want to use a ReplicaSet if you
+  need to create a custom orchestration behaviour. Typically, you will use a
+  Deployment to manage your application instead.
+* Deployments - A Deployment is a resource that manages Pods and ReplicaSets.
+  **It is the most widely used resource for governing applications**. A
+  Deployment's main job is to maintain the state that is configured in its
+  manifest. For example, you can define the number of Pods along with the
+  strategy for deploying new Pods. The Deployment resource controls a Pod's
+  lifecycle, from creation, to updates, to scaling, to deletion. You can also
+  roll back to earlier versions of a Deployment if necessary. Anytime your
+  application needs to be long lived and fault tolerant, a Deployment should be
+  your first choice.
+* StatefulSets - A StatefulSet is a resource for managing stateful
+  applications, such as PostgreSQL, ElasticSearch, and etcd. Similar to a
+  Deployment, it can manage the state of Pods defined in a manifest. However,
+  it also adds features like managing unique Pod names, managing Pod creation,
+  and ordering termination. Each Pod in a StatefulSet has its own state and
+  data bound to it. If you are adding a stateful application to your cluster,
+  choose a StatefulSet over a Deployment.
+* Services - Services allow you to expose applications running in a Pod or
+  group of Pods within the Kubernetes cluster or over the internet. You can
+  choose from the following basic Service types:
+    * ClusterIP - This is the default type when you create a Service. It is
+    assigned an internal routable IP address that proxies connections to one or
+    more Pods. You can access a ClusterIP only from within the Kubernetes
+    cluster.
+    * Headless - This does not create a single-service IP address. It is not
+    load balanced.
+    * NodePort - This exposes the Service on the node's IP addresses and port.
+    * LoadBalancer - This exposes the Service externally. It does this either
+    by using a cloud provide's component, like AWS's Elastic Load Balancing
+    (ELB), or a bare-metal solution, like MetalLB.
+    * ExternalName - This maps a Service to the contents of the externalName
+    field to a CNAME record with its value.
+* Volumes - A Volume is basically a directory or a file that all containers in
+  a Pod can access but with some caveats. If an entire Pod is killed, the
+  Volume and its contents will also be removed. Use a Persistent Volume (PV)
+  for storage that is not linked to a Pod's lifecycle.
+* Secrets - Secrets are convenient resources for safely and reliably sharing
+  sensitive information with Pods. Secrets can be accessed either via
+  environment variables or as a Volume mount inside a Pod.
+* ConfigMaps - ConfigMaps are used to mount nonsensitive configuration files
+  inside a container. A Pod's containers can access the ConfigMap from an
+  environment variable, from command line arguments, or as a file in a Volume
+  mount.
+* Namespaces - The Namespace resource is used to divide a Kubernetes cluster
+  into several smaller virtual clusters. When a Namespace is set, it provides a
+  logical separation of resources, even though those resources can reside on
+  the same nodes.
