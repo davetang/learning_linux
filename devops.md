@@ -72,6 +72,95 @@ The four most used Vagrant commands are:
 
 Use `--help` to find out more information about each (sub)command.
 
+### Getting Started with Ansible
+
+Ansible is a configuration management (CM) tool that can orchestrate the
+provisioning of infrastructure. Ansible uses a _declarative configuration
+style_, which means it allows you to describe what the desired state of
+infrastructure should look like. This is in contrast to an _imperative
+configuration style_, which requires you to supply all the details on the
+desired state of infrastructure.
+
+Ansible uses Yet Another Markup Language (YAML), which is a data serialisation
+language used by Ansible to describe complex data structures and tasks. Ansible
+applies its configuration changes over SSH.
+
+Ansible is an agentless automation tool that you install on a single host
+(referred to as the control node). For your control node, you can use nearly
+any UNIX-like machine with Python 3.9 or newer installed. The managed node (the
+machine that Ansible is managing) does not require Ansible to be installed, but
+requires Python 2.7, or Python 3.5 - 3.11 to run Ansible library code. The
+managed node also needs a user account that can SSH to the node with an
+interactive POSIX shell.
+
+[Install](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
+using `pip`. The `--user` flag will install packages in the home directory.
+This is not necessary if you are using Conda or installing into a virtual
+environment.
+
+```console
+# install
+python3 -m pip install --user ansible
+
+# upgrade
+python3 -m pip install --upgrade --user ansible
+
+# verify
+ansible --version
+```
+
+#### Key Ansible Concepts
+
+* Playbook - A collection of ordered tasks or roles that you can use to
+  configure hosts. A playbook is like an instruction manual on how to assemble
+  a host. Inside the YAML file are different sections. The first section
+  functions as the header, which is a good place to set global variables to use
+  throughout the playbook. For example, setting the name of the play, the
+  hosts, the remote_user, and the privileged escalation method.
+* Control node - Any machine that has Ansible installed and is used to run
+  playbooks or commands.
+* Inventory - A file containing a list of hosts or groups of hosts that Ansible
+  can communicate with.
+* Module - A module encapsulates the details of how to perform certain actions
+  across operating systems, such as how to install a software package. Ansible
+  comes preloaded with many modules.
+* Task - A command or action (such as installing software or adding a user)
+  that is executed on the managed host.
+* Role - A group of tasks and variables that is organised in a standardised
+  directory structure and defines a particular purpose for the server and can
+  be shared with other users for a common goal. A typical role could configure
+  a host to be a database server. This role would include all the files and
+  instructions necessary to install the database application, configure user
+  permissions, and apply seed data.
+
+The `ansible` command is primarily used for running _ad hoc_ or one-time
+commands that you execute from the command line like instructing a group of web
+servers to restart Nginx.
+
+```console
+ansible webservers -m service -a "name=nginx state=restarted" --become
+```
+
+The command above instructs Ansible to restart Nginx on a group of hosts called
+_webservers_. The mapping for the _webservers_ group would be located in the
+inventory file. The Ansible service module interacts with the OS to perform the
+restart. Extra arguments to the service module are passed with the `-a`
+parameter, which provided the name of the service (`nginx`) and that it should
+be restarted. The `--become` flag asks for privilege escalation.
+
+The `ansible-playbook` command runs playbooks. The following instructs
+`ansible-playbook` to execute the `aws-cloudwatch.yml` playbook against a group
+of hosts called `dockerhosts`.
+
+```console
+ansible-playbook -l dockerhosts aws-cloudwatch.yml
+```
+
+The `dockerhosts` need to be listed in the inventory file for the command to
+succeed. If you do not provide a subset of hosts with the `-l` parameter,
+Ansible will assume you want to run the playbook on all the hosts found in your
+inventory file.
+
 ## Containerisation
 
 A container is the running instance of a container image. Containers provide a
