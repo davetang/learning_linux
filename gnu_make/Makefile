@@ -85,7 +85,11 @@ autovar: $(NUM)
 	@echo $$\(word 7,$$\^\) is the seventh prereq: $(word 7,$^)
 	@echo $$\(filter-out $$\<\,$$\^\) filters out the first prereq: $(filter-out $<,$^)
 
+# used to test whether $(dir) can return deeper levels
+$(DATADIR)/test/blah:
+	@echo blah
+
 # sometimes a tool needs the name of the directory containing the necessary
 # files; use $(dir) to get it
-get_dir: $(DATADIR)/1.fa
+get_dir: $(DATADIR)/test/blah
 	@echo $(dir $<)
