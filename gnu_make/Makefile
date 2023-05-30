@@ -1,6 +1,6 @@
 .PHONY: all
 
-all: check_version echo_stuff scoping bams autovar iterate_list
+all: check_version echo_stuff scoping bams autovar iterate_list get_dir
 scoping: scoping_global scoping_local scoping_check pattern
 
 need := 3.81
@@ -85,3 +85,7 @@ autovar: $(NUM)
 	@echo $$\(word 7,$$\^\) is the seventh prereq: $(word 7,$^)
 	@echo $$\(filter-out $$\<\,$$\^\) filters out the first prereq: $(filter-out $<,$^)
 
+# sometimes a tool needs the name of the directory containing the necessary
+# files; use $(dir) to get it
+get_dir: $(DATADIR)/1.fa
+	@echo $(dir $<)
