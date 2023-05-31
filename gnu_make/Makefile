@@ -1,6 +1,6 @@
 .PHONY: all
 
-all: check_version echo_stuff scoping bams autovar iterate_list get_dir
+all: check_version echo_before_override echo_stuff scoping bams autovar iterate_list get_dir
 scoping: scoping_global scoping_local scoping_check pattern
 
 need := 3.81
@@ -24,9 +24,24 @@ make_date = $1-$2-$3
 today := $(call make_date,2022,09,15)
 
 # environmental variables
+# Run `export PACIFIC=ocean` in terminal
+# We do not even need `export` as `PACIFIC=ocean` works too
+echo_before_override:
+	@echo Hello $(USER) your home directory is $(HOME) before override
+	@echo This env does not exist [$(DOESNOTEXIST)]
+	@echo Exported env PACIFIC=[$(PACIFIC)]
+
+# https://stackoverflow.com/questions/10858261/how-to-abort-makefile-if-variable-not-set
+# use error to exit if variable is not set
+ifndef PACIFIC
+$(error Variable PACIFIC is not set)
+endif
+
+# even without override, $(HOME) is set as below
+HOME := /home/sweet/home
 override USER := Mr. President
 echo_stuff:
-	@echo Hello $(USER) your home directory is $(HOME)
+	@echo Hello $(USER) your home directory is $(HOME) after override
 	@echo this Makefile was created on $(today)
 	@echo with parentheses $(fastas)
 	@echo with braces ${fastas}
