@@ -1,6 +1,7 @@
 .PHONY: all
+SHELL := /usr/bin/bash
 
-all: check_version echo_before_override echo_stuff scoping bams autovar iterate_list get_dir
+all: check_version echo_before_override echo_stuff scoping bams autovar iterate_list get_dir tool_ver
 scoping: scoping_global scoping_local scoping_check pattern
 
 need := 3.81
@@ -108,3 +109,10 @@ $(DATADIR)/test/blah:
 # files; use $(dir) to get it
 get_dir: $(DATADIR)/test/blah
 	@echo $(dir $<)
+
+include tool_versions
+
+tool_ver:
+	@echo Tools:
+	@echo Minimap2 version: $(minimap2_version)
+	@echo SAMtools version: $(samtools_version)
