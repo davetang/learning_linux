@@ -22,3 +22,19 @@ They reside in `/usr/include/boost169/boost/`; for example:
     /usr/include/boost169/boost/filesystem
 
 Use `./run.sh` to run all the test scripts.
+
+## Notes
+
+* The `CPPFLAGS` macro is the one to use to specify `#include` directories.
+* The `LDFLAGS` is normally set to contain options that are passed through to
+  the linker (so may include required libraries).
+
+[Probably the same
+problem](https://stackoverflow.com/questions/62280304/yum-using-boost-1-69-instead-of-default-1-53-version-on-centos)
+but I do not want to manually manipulate the symlinks by changing:
+
+    /lib64/libboost_system.so -> libboost_system.so.1.53.0
+
+to:
+
+    /lib64/libboost_system.so -> libboost_system.so.1.69.0
