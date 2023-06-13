@@ -38,3 +38,10 @@ but I do not want to manually manipulate the symlinks by changing:
 to:
 
     /lib64/libboost_system.so -> libboost_system.so.1.69.0
+
+## Fix
+
+Do not include `boost` in the DIR. For example:
+
+    export BOOST_INCLUDEDIR=/usr/include/boost169
+    export BOOST_LIBRARYDIR=/usr/lib64/boost169
