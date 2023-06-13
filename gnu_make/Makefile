@@ -25,15 +25,34 @@ make_date = $1-$2-$3
 today := $(call make_date,2022,09,15)
 
 # environmental variables
-# Run `export PACIFIC=ocean` in terminal
-# We do not even need `export` as `PACIFIC=ocean` works too
+# Run `export PACIFIC=ocean` in terminal to set PACIFIC yourself
 echo_before_override:
 	@echo Hello $(USER) your home directory is $(HOME) before override
 	@echo This env does not exist [$(DOESNOTEXIST)]
 	@echo Exported env PACIFIC=[$(PACIFIC)]
 
+# https://www.gnu.org/software/make/manual/html_node/Conditional-Syntax.html
+#
+# Expand all variable references in arg1 and arg2 and compare them. If they are
+# identical, the text-if-true is effective; otherwise, the text-if-false, if
+# any, is effective.
+#
+# ifeq (arg1, arg2)
+# if PACIFIC is not exported in the env, i.e. is empty, it will be
+# setbythemakefile
+ifeq (,$(PACIFIC))
+PACIFIC=setbythemakefile
+endif
+
+# ifneq is the opposite of ifeq
+
 # https://stackoverflow.com/questions/10858261/how-to-abort-makefile-if-variable-not-set
 # use error to exit if variable is not set
+# ifndef variable-name
+# If the variable variable-name has an empty value, the text-if-true is
+# effective; otherwise, the text-if-false, if any, is effective.
+#
+# This should never evaluate to true
 ifndef PACIFIC
 $(error Variable PACIFIC is not set)
 endif
