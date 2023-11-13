@@ -472,3 +472,72 @@ iptables -A INPUT -s 192.168.0.66 -j DROP
 The `-A INPUT` parameter appends a rule to the INPUT chain. The `-s
 192.168.0.66` specifies the source IP address in the rule and `-j DROP` tells
 the kernel to discard any packets matching the rule.
+
+### resolv.conf
+
+The traditional configuration file for DNS servers is `/etc/resolv.conf`. When
+things were simpler, a typical example might have looked like this, where the
+ISP's name server addresses are 10.32.45.23 and 10.3.2.3.
+
+```
+search mydomain.example.com example.com
+nameserver 10.32.45.23
+nameserver 10.3.2.3
+```
+
+The `search` line defines rules for incomplete hostnames (just the first part
+of the hostname, for example, `myserver` instead of `myserver.example.com`).
+Here, the resolver library would try to look up `host.mydomain.example.com` and
+`host.example.com`.
+
+Generally, name lookups are no longer this straightforward. Many enhancements
+and modifications have been made to the DNS configuration.
+
+### Caching and Zero-Configuration DNS
+
+There are two main problems with the traditional DNS configuration. First, the
+local machine does not cache name server replies, so frequent repeated network
+access may be unneccessarily slow due to name server requests. To solve this
+problem, many machines (and routers, if acting as name servers) run an
+intermediate daemon to intercept name server requests and cache the reply, and
+then use the cached answers if possible. The most common of these daemons is
+systemd-resolved; you might also see dnsmasq or nscd on your system. You can
+also set up BIND (the standard Unix name server daemon) as a cache. You can
+often tell that you're running a name server caching daemon if you see
+127.0.0.53 or 127.0.0.1 either in your `/etc/resolv.conf` file or listed as the
+server when you run `nslookup -debug host`. Take a closer look, though. If
+you're running systemd-resolved, you might notice that `resolv.conf` isn't even
+a file in `/etc`; it is a link to an automatically generated file in `/run`.
+
+There is a lot more to systemd-resolved than meets the eye, as it cane combine
+several name lookup services and expose them differently for each interface.
+This addresses the second problem with the traditional name server setup: it
+can be particularly inflexible if you want to be able to look up names on your
+local network without messing around with a lot of configuration. For example,
+if you set up a network applicance on your network, you will want to be able to
+  call it by name immediately. This is part of the idea behind
+  zero-configuration name service systems such as Multicast DNS (mDNS) and
+  Link-Local Multicast Name Resolution (LLMNR). If a process wants to find a
+  host by name on the local network, it just broadcasts a request over the
+  network; if present, the target host replies with its address. These
+  protocols go beyond hostname resolution by also providing information about
+  available services.
+
+You can check the current DNS settings with the `resolvectl status` command
+(note that this might be called `systemd-resolve` on older systems). You will
+get a list of global settings (typically of little use), and then you'll see
+the settings for each individual interface.
+
+```
+Link 2 (enp0s31f6)
+Current Scopes: DNS
+LLMNR setting: yes
+MulticastDNS setting: no
+DNSSEC setting: no
+DNSSEC supported: no
+DNS Servers: 8.8.8.8
+DNS Domain: ~.
+```
+
+You can see various supported name protocols here, as well as the name server
+that systemd-resolved consults for a name that it does not know.
