@@ -143,8 +143,16 @@ $(DATADIR)/test/blah:
 get_dir: $(DATADIR)/test/blah
 	@echo $(dir $<)
 
+# https://www.gnu.org/software/make/manual/html_node/Include.html
+#
+# 3.3 Including Other Makefiles
+#
+# The include directive tells make to suspend reading the current makefile and
+# read one or more other makefiles before continuing. The directive is a line
+# in the makefile that looks like this:
 include tool_versions
 
+# tool_versions sets the variables $(minimap2_version) and $(samtools_version)
 tool_ver:
 	@echo Tools:
 	@echo Minimap2 version: $(minimap2_version)
