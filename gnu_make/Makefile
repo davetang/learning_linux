@@ -1,7 +1,7 @@
 .PHONY: all
 SHELL := /usr/bin/bash
 
-all: check_version echo_before_override echo_stuff scoping bams autovar iterate_list get_dir tool_ver
+all: first check_version echo_before_override echo_stuff scoping bams autovar iterate_list get_dir tool_ver
 scoping: scoping_global scoping_local scoping_check pattern
 
 need := 3.81
@@ -11,6 +11,20 @@ DATADIR := data
 RESULTDIR := result
 
 fastas := $(wildcard $(DATADIR)/*.fa)
+
+# https://ftp.gnu.org/old-gnu/Manuals/make-3.79.1/html_node/make_46.html
+#
+# Normally make prints each command line before it is executed. We call this
+# echoing because it gives the appearance that you are typing the commands
+# yourself.
+#
+# When a line starts with `@`, the echoing of that line is suppressed. The `@`
+# is discarded before the command is passed to the shell. Typically you would
+# use this for a command whose only effect is to print something, such as an
+# echo command.
+first: echo
+echo:
+	@echo Hello World!
 
 check_version:
 	@echo Make version $(MAKE_VERSION) is $(if $(ok),,not) compatiable with this Makefile
