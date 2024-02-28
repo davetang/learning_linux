@@ -1,16 +1,8 @@
 .PHONY: all
 SHELL := /usr/bin/bash
 
-all: first check_version echo_before_override echo_stuff scoping bams autovar iterate_list get_dir tool_ver
+all: first recursive_expansion simply_expanded check_version echo_before_override echo_stuff scoping bams autovar iterate_list get_dir tool_ver
 scoping: scoping_global scoping_local scoping_check pattern
-
-need := 3.81
-ok := $(filter $(need),$(firstword $(sort $(MAKE_VERSION) $(need))))
-
-DATADIR := data
-RESULTDIR := result
-
-fastas := $(wildcard $(DATADIR)/*.fa)
 
 # https://ftp.gnu.org/old-gnu/Manuals/make-3.79.1/html_node/make_46.html
 #
@@ -25,6 +17,56 @@ fastas := $(wildcard $(DATADIR)/*.fa)
 first: echo
 echo:
 	@echo Hello World!
+
+
+# https://www.gnu.org/software/make/manual/html_node/Setting.html
+#
+# Setting variables
+#
+# To set a variable from the makefile, write a line starting with the variable
+# name followed by one of the assignment operators:
+#
+# =
+# :=
+# ::=
+# :::=
+#
+# Whatever follows the operator and any initial whitespace on the line becomes
+# the value.
+#
+# Variables defined with `=` are recursively expanded variables. Variables
+# defined with `:=` or `::=` are simply expanded variables; these definitions
+# can contain variable references which will be expanded before the definition
+# is made. Variables defined with `:::=` are immediately expanded variables.
+# See https://www.gnu.org/software/make/manual/html_node/Flavors.html.
+#
+# Recursively expanded variables
+l1 = first
+l2 = $(l1)
+l3 = $(l2)
+l4 = $(l3)
+recursive_expansion:
+	@echo $(l4)
+
+# Simply expanded variable assignment
+# $(x) is not expanded and stored in $(y)
+# ::= is POSIX standard
+y ::= $(x) mate
+x = later
+yy = $(xx) matee
+xx = laterr
+
+simply_expanded:
+	@echo x is $(x) and y is $(y)
+	@echo xx is $(xx) and yy is $(yy)
+
+need := 3.81
+ok := $(filter $(need),$(firstword $(sort $(MAKE_VERSION) $(need))))
+
+DATADIR := data
+RESULTDIR := result
+
+fastas := $(wildcard $(DATADIR)/*.fa)
 
 check_version:
 	@echo Make version $(MAKE_VERSION) is $(if $(ok),,not) compatiable with this Makefile
