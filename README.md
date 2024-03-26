@@ -106,6 +106,12 @@ makes the presented information possibly unreliable.
 
     sudo dmidecode --type connector | less
 
+Find motherboard/system model.
+
+```console
+sudo dmidecode --string system-product-name
+```
+
 ### Use cases
 
 Mount a portable USB hard disk plugged into a server.
