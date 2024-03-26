@@ -42,6 +42,33 @@ sudo lsscsi --controllers
 [3]    ahci
 ```
 
+`smartctl` - Control and Monitor Utility for SMART Disks
+
+```console
+sudo smartctl --info /dev/sda
+```
+```
+smartctl 7.3 2022-02-28 r5338 [x86_64-linux-6.1.0-18-amd64] (local build)
+Copyright (C) 2002-22, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Device Model:     SUNEAST SE800 SSD 1T
+Serial Number:    30091897265
+LU WWN Device Id: 5 000000 000002f9f
+Firmware Version: 030fAA20
+User Capacity:    1,024,209,543,168 bytes [1.02 TB]
+Sector Size:      512 bytes logical/physical
+Rotation Rate:    Solid State Device
+Form Factor:      2.5 inches
+TRIM Command:     Available, deterministic, zeroed
+Device is:        Not in smartctl database 7.3/5319
+ATA Version is:   ACS-4 (minor revision not indicated)
+SATA Version is:  SATA 3.2, 6.0 Gb/s (current: 6.0 Gb/s)
+Local Time is:    Tue Mar 26 23:31:18 2024 JST
+SMART support is: Available - device has SMART capability.
+SMART support is: Enabled
+```
+
 View system's partition table; useful for finding out the File system, device
 name, start/end sectors.
 
