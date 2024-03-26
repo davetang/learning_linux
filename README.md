@@ -11,7 +11,36 @@ List SCSI devices (typically hard disks); useful for listing block devices.
 Note that this is not limited to SCSI devices and block devices connected via
 USB will also be listed.
 
-    sudo lsscsi
+You may need to install it first.
+
+```console
+# Debian/Ubuntu
+sudo apt install -y lsscsi
+
+# CentOS/RHEL
+yum install lsscsi
+```
+
+List SCSI devices (or hosts) and list NVMe devices (version 0.30 and higher).
+
+```console
+sudo lsscsi
+```
+```
+[0:0:0:0]    disk    ATA      SUNEAST SE800 SS AA20  /dev/sda
+```
+
+Lists NVMe controllers and SCSI hosts.
+
+```console
+sudo lsscsi --controllers
+```
+```
+[0]    ahci
+[1]    ahci
+[2]    ahci
+[3]    ahci
+```
 
 View system's partition table; useful for finding out the File system, device
 name, start/end sectors.
