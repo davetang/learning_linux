@@ -69,6 +69,16 @@ View current IP filtering rules.
 
     sudo iptables -L
 
+`dmidecode` is a tool for dumping a computer's DMI (some say SMBIOS) table
+contents in a human-readable format. This table contains a description of the
+system's hardware components, as well as other useful pieces of information
+such as serial numbers and BIOS revision. Thanks to this table, you can
+retrieve this information without having to probe for the actual hardware.
+While this is a good point in terms of report speed and safeness, this also
+makes the presented information possibly unreliable.
+
+    sudo dmidecode --type connector | less
+
 ### Use cases
 
 Mount a portable USB hard disk plugged into a server.
