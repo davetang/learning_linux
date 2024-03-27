@@ -9,7 +9,8 @@ notes here.
 
 List SCSI devices (typically hard disks); useful for listing block devices.
 Note that this is not limited to SCSI devices and block devices connected via
-USB will also be listed.
+USB will also be listed. Output from the examples below are from two separate
+computers.
 
 You may need to install it first.
 
@@ -40,6 +41,20 @@ sudo lsscsi --controllers
 [1]    ahci
 [2]    ahci
 [3]    ahci
+```
+
+On a computer that has a NVMe controller.
+
+```console
+sudo lsscsi --long
+```
+```
+[2:0:0:0]    disk    ATA      TOSHIBA DT01ACA2 AC60  /dev/sda
+  state=running queue_depth=32 scsi_level=6 type=0 device_blocked=0 timeout=30
+[3:0:0:0]    disk    ATA      WDC  WDS100T2B0A 40WD  /dev/sdb
+  state=running queue_depth=32 scsi_level=6 type=0 device_blocked=0 timeout=30
+[N:0:4:1]    disk    SAMSUNG MZVLB512HAJQ-000H1__1              /dev/nvme0n1
+  capability=0  ext_range=256  hidden=0  nsid=1  range=0  removable=0
 ```
 
 `smartctl` - Control and Monitor Utility for SMART Disks
