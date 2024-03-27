@@ -44,6 +44,25 @@ sudo lsscsi --controllers
 
 `smartctl` - Control and Monitor Utility for SMART Disks
 
+Install if necessary.
+
+```console
+sudo apt install -y smartmontools
+```
+
+Scan for devices.
+
+```console
+sudo smartctl --scan
+```
+```
+/dev/sda -d scsi # /dev/sda, SCSI device
+/dev/sdb -d scsi # /dev/sdb, SCSI device
+/dev/nvme0 -d nvme # /dev/nvme0, NVMe device
+```
+
+Info on `/dev/sda`.
+
 ```console
 sudo smartctl --info /dev/sda
 ```
