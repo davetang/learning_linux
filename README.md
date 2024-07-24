@@ -288,3 +288,15 @@ UUID=ID /data ext4 defaults 0 0
 ```console
 sudo shutdown -r now
 ```
+
+8. Change permission
+
+```console
+sudo chown $USER:$USER /data
+cd /data
+echo hello > test.txt
+cat test.txt
+```
+```
+hello
+```
