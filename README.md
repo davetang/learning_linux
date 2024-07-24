@@ -1,3 +1,10 @@
+## Table of Contents
+
+  - [Learning linux](#learning-linux)
+  - [Useful commands](#useful-commands)
+  - [Mount portable USB](#mount-portable-usb)
+  - [Mount new hard disk](#mount-new-hard-disk)
+
 ## Learning linux
 
 I recently purchased the [Linux Humble
@@ -146,7 +153,7 @@ Find motherboard/system model.
 sudo dmidecode --string system-product-name
 ```
 
-### Use cases
+## Mount portable USB
 
 Mount a portable USB hard disk plugged into a server.
 
@@ -186,3 +193,98 @@ sudo apt install ntfs-3g
 mount point directory.
 
     sudo umount /mnt/media/my_hd
+
+## Mount new hard disk
+
+1. Find 2.5" SSD plugged in with the SATA data and power cable.
+
+```console
+sudo fdisk -l
+```
+```
+Disk /dev/sda: 931.51 GiB, 1000204886016 bytes, 1953525168 sectors
+Disk model: CT1000MX500SSD1
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 4096 bytes
+I/O size (minimum/optimal): 4096 bytes / 4096 bytes
+```
+
+2. Create new primary partition accepting all defaults.
+
+```console
+sudo fdisk /dev/sda
+```
+```
+Welcome to fdisk (util-linux 2.38.1).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+Device does not contain a recognized partition table.
+Created a new DOS (MBR) disklabel with disk identifier 0x7dd18d01.
+
+Command (m for help): n
+Partition type
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended (container for logical partitions)
+Select (default p):
+
+Using default response p.
+Partition number (1-4, default 1):
+First sector (2048-1953525167, default 2048):
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-1953525167, default 1953525167):
+
+Created a new partition 1 of type 'Linux' and of size 931.5 GiB.
+
+Command (m for help):
+```
+
+3. Enter `w` to write the changes after the `Command (m for help):` prompt.
+
+```
+Command (m for help): w
+The partition table has been altered.
+Calling ioctl() to re-read partition table.
+Syncing disks.
+```
+
+4. Add a file system (`ext4`).
+
+```console
+sudo mkfs -t ext4 /dev/sda1
+```
+```
+mke2fs 1.47.0 (5-Feb-2023)
+Discarding device blocks: done
+Creating filesystem with 244190390 4k blocks and 61054976 inodes
+Filesystem UUID: ee812feb-e1c0-4143-9000-f8236518eef3
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+        4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968,
+        102400000, 214990848
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (262144 blocks): done
+Writing superblocks and filesystem accounting information: done
+```
+
+5. Find the UUID.
+
+```console
+sudo blkid
+```
+
+6. Add entry to `/etc/fstab`.
+
+```console
+sudo vi /etc/fstab
+```
+```
+UUID=ID /data ext4 defaults 0 0
+```
+
+7. Restart.
+
+```console
+sudo shutdown -r now
+```
