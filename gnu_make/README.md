@@ -1,3 +1,11 @@
+## Table of Contents
+
+- [README](#readme)
+  - [.PHONY](#phony)
+  - [Variable assignment](#variable-assignment)
+  - [Notes](#notes)
+    - [Symlinks](#symlinks)
+
 # README
 
 Playing around with [GNU Make](https://www.gnu.org/software/make/).
@@ -108,3 +116,9 @@ HELLO_WORLD += world!
 # This echoes "hello world!"
 echo $(HELLO_WORLD)
 ```
+
+## Notes
+
+### Symlinks
+
+When the target is a symlink, Make does not look at the mtime of the symlink but rather, it looks at the mtime of the linked file. Therefore, if your Makefile (or dependency) has a more recent mtime, this step will always run until the linked file is updated with a more recent mtime.
