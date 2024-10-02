@@ -11,4 +11,5 @@
 export LANGUAGE=en_AU.UTF-8
 
 sleep 10
-echo job2 > 2.txt
+cat 1.txt > 2.txt
+echo job2 >> 2.txt

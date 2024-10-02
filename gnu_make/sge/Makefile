@@ -16,12 +16,10 @@ merged.txt: $(FILES)
 	qsub $<
 
 2.txt: job2.sh 1.txt
-	qsub $<
-	cat $(word 2,$^) >> $@
+	qsub -hold_jid job1 $<
 
 3.txt: job3.sh 2.txt
-	qsub $<
-	cat $(word 2,$^) >> $@
+	qsub -hold_jid job2 $<
 
 clean:
 	rm -rf *.txt *.log

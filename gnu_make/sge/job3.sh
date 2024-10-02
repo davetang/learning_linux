@@ -11,4 +11,5 @@
 export LANGUAGE=en_AU.UTF-8
 
 sleep 10
-echo job3 > 3.txt
+cat 2.txt > 3.txt
+echo job3 >> 3.txt
