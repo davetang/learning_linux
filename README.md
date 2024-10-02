@@ -1,6 +1,7 @@
 ## Table of Contents
 
   - [Learning linux](#learning-linux)
+  - [Quick notes](#quick-notes)
   - [Useful commands](#useful-commands)
   - [Mount portable USB](#mount-portable-usb)
   - [Mount new hard disk](#mount-new-hard-disk)
@@ -11,6 +12,22 @@ I recently purchased the [Linux Humble
 Bundle](https://www.humblebundle.com/books/linux-no-starch-press-books) for
 around 40 USD. I'll slowly go through the books and will consolidate all my
 notes here.
+
+## Quick notes
+
+* Use `/etc/hosts` to map hostnames to IP addresses. The format is:
+
+```
+# this is a comment
+# fields can be spaces or tabs
+IP_address  hostname  [alias1]  [alias2]  ...
+```
+
+As with most things Linux, the order matters: first matching entry will be used.
+
+On Debian, an IP address of 127.0.1.1 is sometimes seen. This is [because](https://www.debian.org/doc/manuals/debian-reference/ch05.en.html#_the_hostname_resolution):
+
+> The IP address 127.0.1.1 is created by the Debian Installer for a system without a permanent IP address as a workaround for some software (e.g., GNOME).
 
 ## Useful commands
 
