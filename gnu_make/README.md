@@ -119,6 +119,8 @@ echo $(HELLO_WORLD)
 
 ## Notes
 
+When using `$` in a Makefile, it might be processed as a special character, e.g., Make might interpret it as a variable. Therefore, use `$$` instead.
+
 ### Symlinks
 
 When the target is a symlink, Make does not look at the mtime of the symlink but rather, it looks at the mtime of the linked file. Therefore, if your Makefile (or dependency) has a more recent mtime, this step will always run until the linked file is updated with a more recent mtime.
