@@ -7,11 +7,13 @@
 .PHONY: all
 SHELL := /bin/bash
 
-FILES = 1.txt 2.txt 3.txt
-all: $(FILES)
+FILES := 1.txt 2.txt 3.txt
+MORE_FILES := $(shell cat files_to_create.csv | cut -f1 -d',')
+all: $(FILES) $(MORE_FILES)
 
 %.txt:
-	touch {1,2,3}.txt
+	@echo "Generating: $@"
+	touch $@
 
 clean:
 	rm -rf *.txt
