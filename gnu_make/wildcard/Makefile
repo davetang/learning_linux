@@ -9,10 +9,14 @@ SHELL := /bin/bash
 
 FILES := 1.txt 2.txt 3.txt
 MORE_FILES := $(shell cat files_to_create.csv | cut -f1 -d',')
-all: $(FILES) $(MORE_FILES)
+all: $(FILES) $(MORE_FILES) final.txt
 
 %.txt:
 	@echo "Generating: $@"
+	touch $@
+
+# use variable for dependency
+final.txt: $(FILES) $(MORE_FILES)
 	touch $@
 
 clean:
