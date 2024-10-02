@@ -1,8 +1,8 @@
 .PHONY: all
 SHELL := /bin/bash
 
-FILES := 1.txt 2.txt 3.txt 4.txt
-all: $(FILES) merged.txt
+FILES := a.txt b.txt c.txt d.txt
+all: $(FILES) merged.txt 3.txt
 
 %.txt:
 	@echo "Generating: $@"
@@ -12,5 +12,16 @@ all: $(FILES) merged.txt
 merged.txt: $(FILES)
 	cat $^ | sort > $@
 
+1.txt: job1.sh
+	qsub $<
+
+2.txt: job2.sh 1.txt
+	qsub $<
+	cat $(word 2,$^) >> $@
+
+3.txt: job3.sh 2.txt
+	qsub $<
+	cat $(word 2,$^) >> $@
+
 clean:
-	rm -rf *.txt
+	rm -rf *.txt *.log
