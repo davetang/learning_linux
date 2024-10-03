@@ -1,6 +1,7 @@
 ## Table of Contents
 
 - [README](#readme)
+  - [Basics](#basics)
   - [.PHONY](#phony)
   - [Variable assignment](#variable-assignment)
   - [Notes](#notes)
@@ -13,6 +14,19 @@ Playing around with [GNU Make](https://www.gnu.org/software/make/).
 ```bash
 mkdir data; for i in {1..4}; do echo ${i} > data/${i}.fa; done
 ```
+
+## Basics
+
+GNU `make` defines a language for describing the relationships between files. Using `make` makes you think about each component and how they fit together.
+
+Rules are used to define relationships and consists of three parts: 1. the target, 2. its prerequisites, and 3. the command(s) to execute:
+
+```
+target: prereq1 prereq2
+<tab>commands
+```
+
+The _target_ is the file to create and the _prerequisites_ or _dependents_ are the files that must exist before the target can be built. The _commands_ are the actual shell commands that will create the target from the prerequisites. If a prerequisite has an associated rule, `make` will update that first.
 
 ## .PHONY
 
