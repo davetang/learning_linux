@@ -2,6 +2,7 @@
 
 - [README](#readme)
   - [Basics](#basics)
+    - [Rules](#rules)
   - [.PHONY](#phony)
   - [Variable assignment](#variable-assignment)
   - [Notes](#notes)
@@ -27,6 +28,17 @@ target: prereq1 prereq2
 ```
 
 The _target_ is the file to create and the _prerequisites_ or _dependents_ are the files that must exist before the target can be built. The _commands_ are the actual shell commands that will create the target from the prerequisites. If a prerequisite has an associated rule, `make` will update that first.
+
+### Rules
+
+A rule defines a target and its prerequisites (if any). There are a number of different kinds of rules:
+
+1. _Explicit rules_ indicate a specific target to be updated and is the most common type of rule
+2. _Pattern rules_ use wildcards instead of explicit filenames; they allow `make` to apply the rule any time a target file matching the pattern needs to be updated.
+3. _Implicit rules_ are either pattern rules or suffix rules found in the rules database built into Make.
+4. _Static pattern rules_ are like regular pattern rules except they apply only to a specific list of target files.
+
+There are also _suffix rules_ but they are considered obsolete and have been replaced by pattern rules, which are clearer and more general.
 
 ## .PHONY
 
