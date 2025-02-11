@@ -5,6 +5,7 @@
   - [Useful commands](#useful-commands)
   - [Mount portable USB](#mount-portable-usb)
   - [Mount new hard disk](#mount-new-hard-disk)
+  - [Don't panic](#dont-panic)
 
 ## Learning linux
 
@@ -317,3 +318,19 @@ cat test.txt
 ```
 hello
 ```
+
+## Don't panic
+
+Filesystem inconsistencies.
+
+```
+Unexpected inconsistency: run fsck manually without -a or -p
+```
+
+In recovery mode, replacing `/dev/sda1` with the actual partition. Do not run `fsck` on a mounted filesystem.
+
+```console
+fsck -f /dev/sda1
+```
+
+Answer 'y' (default) to prompts about fixing issues. Afterwards reboot and hopefully the issues have been resolved.
