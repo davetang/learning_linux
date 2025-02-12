@@ -354,7 +354,7 @@ Warning: skipping journal recovery because doing a read-only filesystem check.
 
 ### Detect Bad Sectors
 
-Manual scan using `badblocks`. (Took 45 minutes on a 512 Gb NVMe SSD.)
+Manual scan using `badblocks`. (Took 45 minutes on a 512GB NVMe SSD.)
 
 ```console
 sudo /sbin/badblocks --v /dev/nvme0n1p2
@@ -385,3 +385,15 @@ Checking for bad blocks (read-only test): 120589728
 done
 Pass completed, 20 bad blocks found. (20/0/0 errors)
 ```
+
+It is essential to note that:
+
+* Not all "bad" blocks are necessarily problematic.
+* Even if the disk reports multiple bad blocks, it may still be functional.
+
+To prevent such issues in the future, consider the following best practices:
+
+* Regularly check your disks for errors using tools like `badblocks` and `fsck`.
+* Keep your system's file system up to date with the latest patches.
+* Use a reliable disk format (e.g., XFS or ext4); use `sudo parted -l` to find out.
+
