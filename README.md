@@ -6,6 +6,8 @@
   - [Mount portable USB](#mount-portable-usb)
   - [Mount new hard disk](#mount-new-hard-disk)
   - [Don't panic](#dont-panic)
+    - [Check Filesystem Consistency](#check-filesystem-consistency)
+    - [Detect Bad Sectors](#detect-bad-sectors)
 
 ## Learning linux
 
@@ -334,3 +336,52 @@ fsck -f /dev/sda1
 ```
 
 Answer 'y' (default) to prompts about fixing issues. Afterwards reboot and hopefully the issues have been resolved.
+
+### Check Filesystem Consistency
+
+Manual scan; the `-n` option tells `fsck` not to mount the filesystem after the check.
+
+```console
+sudo fsck -n /dev/nvme0n1p2
+```
+```
+sck from util-linux 2.38.1
+e2fsck 1.47.0 (5-Feb-2023)
+Warning!  /dev/nvme0n1p2 is mounted.
+Warning: skipping journal recovery because doing a read-only filesystem check.
+/dev/nvme0n1p2: clean, 1815101/31162368 files, 93123289/124645632 blocks
+```
+
+### Detect Bad Sectors
+
+Manual scan using `badblocks`. (Took 45 minutes on a 512 Gb NVMe SSD.)
+
+```console
+sudo /sbin/badblocks --v /dev/nvme0n1p2
+```
+```
+sudo /sbin/badblocks -v /dev/nvme0n1p2
+Checking blocks 0 to 498582527
+Checking for bad blocks (read-only test): 120589728
+120589729
+120589730
+120589731
+280183072
+280183073
+280183074
+280183075
+280183076
+280183077
+280183078
+280183079
+280486588
+280486589
+280486590
+280486591
+481071784
+481071785
+481071786
+481071787
+done
+Pass completed, 20 bad blocks found. (20/0/0 errors)
+```
