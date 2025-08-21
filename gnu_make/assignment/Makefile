@@ -8,6 +8,12 @@ SIMP := $(BAR)   # simple (:=) set now, so it does not change
 REC = $(BAR)     # recursive (=) set later
 BAR := changed   # overwrite BAR after defining REC and SIMP
 
+# conditional assignment
+# priority: command line > Makefile > environment > built-in > default
+# ?= only runs if none of the above have been set
+# make CC=clang
+CC ?= gcc
+
 NOW_EQ = $(shell date +%s)       # re-evaluated at each expansion
 NOW_SIMPLE := $(shell date +%s)  # fixed at parse time
 
@@ -18,6 +24,7 @@ print_vars:
 	@echo "BAR          -> $(BAR)"
 	@echo "SIMP  (:= )  -> $(SIMP)"
 	@echo "REC   ( = )  -> $(REC)"
+	@echo "CC    (?= )  -> $(CC)"
 	@echo
 
 # Chain the SIMPLE steps; value should be identical both times.
