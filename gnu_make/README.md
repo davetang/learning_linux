@@ -5,6 +5,7 @@
     - [Rules](#rules)
   - [.PHONY](#phony)
   - [Variable assignment](#variable-assignment)
+  - [Built-in functions](#built-in-functions)
   - [Notes](#notes)
     - [Symlinks](#symlinks)
 
@@ -132,6 +133,12 @@ echo $(HELLO_WORLD)
 ```
 
 See <https://github.com/davetang/learning_linux/blob/main/gnu_make/assignment/Makefile> for a demo.
+
+## Built-in functions
+
+GNU Make has a whole bunch of built-in functions that are useful for text processing and control functions that you can call inside Makefiles; they expand to strings before recipes are executed.
+
+See <https://github.com/davetang/learning_linux/blob/main/gnu_make/functions/Makefile> for a demo on some built-in functions.
 
 ## Notes
 
