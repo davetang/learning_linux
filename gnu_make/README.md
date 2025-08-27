@@ -29,6 +29,8 @@ target: prereq1 prereq2
 
 The _target_ is the file to create and the _prerequisites_ or _dependents_ are the files that must exist before the target can be built. The _commands_ are the actual shell commands that will create the target from the prerequisites. If a prerequisite has an associated rule, `make` will update that first.
 
+For multiple targets, see <https://github.com/davetang/learning_linux/blob/main/gnu_make/multi_target/Makefile>.
+
 ### Rules
 
 A rule defines a target and its prerequisites (if any). There are a number of different kinds of rules:
@@ -39,6 +41,8 @@ A rule defines a target and its prerequisites (if any). There are a number of di
 4. _Static pattern rules_ are like regular pattern rules except they apply only to a specific list of target files.
 
 There are also _suffix rules_ but they are considered obsolete and have been replaced by pattern rules, which are clearer and more general.
+
+For a demo on explicit and implicit rules, see <https://github.com/davetang/learning_linux/blob/main/gnu_make/rules/Makefile>.
 
 ## .PHONY
 
@@ -136,3 +140,5 @@ When using `$` in a Makefile, it might be processed as a special character, e.g.
 ### Symlinks
 
 When the target is a symlink, Make does not look at the mtime of the symlink but rather, it looks at the mtime of the linked file. Therefore, if your Makefile (or dependency) has a more recent mtime, this step will always run until the linked file is updated with a more recent mtime.
+
+See <https://github.com/davetang/learning_linux/blob/main/gnu_make/symlink/Makefile> for a simple demo.
