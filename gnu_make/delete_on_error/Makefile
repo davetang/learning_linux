@@ -1,12 +1,15 @@
 .DELETE_ON_ERROR:
 .PHONY: all
 
-all: output.txt
+all: output2.txt
 
-output.txt:
+output1.txt:
+	touch $@
+
+output2.txt: output1.txt
 	touch $@
 	sleep 10
 	touch $@
 
 clean:
-	rm -f output.txt
+	rm -f output1.txt output2.txt
