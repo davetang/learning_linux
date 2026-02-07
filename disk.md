@@ -1,5 +1,15 @@
 ## Disks
 
+This document covers how Linux manages disks, based on Chapter 4 of [How Linux Works, 3rd Edition](https://nostarch.com/howlinuxworks3). It starts with the disk schematic: a **partition table** (MBR or GPT) divides a block device (e.g., `/dev/sda`) into **partitions** (e.g., `/dev/sda1`), each containing a **filesystem**. Partitioning tools include `fdisk` (stages changes, writes on exit) and `parted` (applies changes immediately).
+
+Filesystems are managed through the **Virtual File System** (VFS) abstraction layer, which gives all filesystem types (ext4, btrfs, XFS, FAT/vfat/exfat, ntfs, ISO 9660, etc.) a uniform interface. Creating a filesystem is done with `mkfs -t type device`.
+
+**Mounting** attaches a filesystem to the directory tree at a mount point. Key commands: `mount` to attach, `umount` to detach, `blkid` to find UUIDs, and `sync` to flush write buffers to disk. Persistent mounts are configured in `/etc/fstab`, which specifies the device/UUID, mount point, filesystem type, options, and `fsck` order. Prefer **UUID** over device names in `/etc/fstab` since device names can change between boots.
+
+For filesystem integrity, `fsck` checks and repairs filesystems — **never run it on a mounted filesystem**. Run `fsck -n` for a read-only check.
+
+### Details
+
 Notes from Chapter 4 of [How Linux Works, 3rd
 Edition](https://nostarch.com/howlinuxworks3).
 
