@@ -6,8 +6,13 @@
   - [Mount portable USB](#mount-portable-usb)
   - [Mount new hard disk](#mount-new-hard-disk)
   - [Don't panic](#dont-panic)
+    - [Filesystem Inconsistencies](#filesystem-inconsistencies)
     - [Check Filesystem Consistency](#check-filesystem-consistency)
+    - [Check Disk Health with SMART](#check-disk-health-with-smart)
     - [Detect Bad Sectors](#detect-bad-sectors)
+    - [Recovering from a Full Disk](#recovering-from-a-full-disk)
+    - [Rescue an Unbootable System](#rescue-an-unbootable-system)
+    - [Prevention](#prevention)
 
 ## Learning linux
 
@@ -323,33 +328,103 @@ hello
 
 ## Don't panic
 
-Filesystem inconsistencies.
+A collection of emergency recovery procedures for when things go wrong with
+your Linux system. See also [trouble.md](trouble.md) for general
+troubleshooting scenarios (high load, memory, iowait, networking).
+
+### Filesystem Inconsistencies
+
+If you see this error during boot:
 
 ```
 Unexpected inconsistency: run fsck manually without -a or -p
 ```
 
-In recovery mode, replacing `/dev/sda1` with the actual partition. Do not run `fsck` on a mounted filesystem.
+You will likely be dropped into a recovery shell (or need to boot into one).
+The root filesystem may be mounted read-only. First, identify the problematic
+partition:
 
 ```console
+mount | grep ' / '
+```
+
+If the root filesystem is read-only, remount it read-write so you can make
+changes:
+
+```console
+mount -o remount,rw /
+```
+
+Then run `fsck` on the affected partition. **Never run `fsck` on a mounted
+filesystem** — unmount it first, or ensure it is mounted read-only:
+
+```console
+umount /dev/sda1
 fsck -f /dev/sda1
 ```
 
-Answer 'y' (default) to prompts about fixing issues. Afterwards reboot and hopefully the issues have been resolved.
+Answer 'y' (default) to prompts about fixing issues. Afterwards reboot:
+
+```console
+shutdown -r now
+```
 
 ### Check Filesystem Consistency
 
-Manual scan; the `-n` option tells `fsck` not to mount the filesystem after the check.
+Read-only scan of a filesystem; the `-n` option tells `fsck` to make no
+changes and not to mount the filesystem after the check. Safe to run as a
+diagnostic.
 
 ```console
 sudo fsck -n /dev/nvme0n1p2
 ```
 ```
-sck from util-linux 2.38.1
+fsck from util-linux 2.38.1
 e2fsck 1.47.0 (5-Feb-2023)
 Warning!  /dev/nvme0n1p2 is mounted.
 Warning: skipping journal recovery because doing a read-only filesystem check.
 /dev/nvme0n1p2: clean, 1815101/31162368 files, 93123289/124645632 blocks
+```
+
+### Check Disk Health with SMART
+
+Use `smartctl` (see [Useful commands](#useful-commands) for installation) to
+check the overall health assessment of a drive before problems occur:
+
+```console
+sudo smartctl -H /dev/sda
+```
+```
+=== START OF READ SMART DATA SECTION ===
+SMART overall-health self-assessment test result: PASSED
+```
+
+View detailed SMART attributes to look for warning signs (reallocated sectors,
+pending sectors, uncorrectable errors):
+
+```console
+sudo smartctl -A /dev/sda
+```
+
+Key attributes to watch:
+
+| Attribute                   | Warning sign                          |
+|-----------------------------|---------------------------------------|
+| Reallocated_Sector_Ct       | Non-zero and increasing               |
+| Current_Pending_Sector      | Non-zero means sectors awaiting remap |
+| Offline_Uncorrectable       | Non-zero means unrecoverable errors   |
+| UDMA_CRC_Error_Count        | Cable or connection issues             |
+
+Run a short self-test (takes ~2 minutes):
+
+```console
+sudo smartctl -t short /dev/sda
+```
+
+Check the result after the test completes:
+
+```console
+sudo smartctl -l selftest /dev/sda
 ```
 
 ### Detect Bad Sectors
@@ -357,10 +432,9 @@ Warning: skipping journal recovery because doing a read-only filesystem check.
 Manual scan using `badblocks`. (Took 45 minutes on a 512GB NVMe SSD.)
 
 ```console
-sudo /sbin/badblocks --v /dev/nvme0n1p2
-```
-```
 sudo /sbin/badblocks -v /dev/nvme0n1p2
+```
+```
 Checking blocks 0 to 498582527
 Checking for bad blocks (read-only test): 120589728
 120589729
@@ -391,9 +465,96 @@ It is essential to note that:
 * Not all "bad" blocks are necessarily problematic.
 * Even if the disk reports multiple bad blocks, it may still be functional.
 
-To prevent such issues in the future, consider the following best practices:
+To have `e2fsck` use the bad blocks list when checking the filesystem:
 
-* Regularly check your disks for errors using tools like `badblocks` and `fsck`.
+```console
+sudo /sbin/badblocks -v /dev/nvme0n1p2 > /tmp/bad_blocks.txt
+sudo e2fsck -l /tmp/bad_blocks.txt /dev/nvme0n1p2
+```
+
+### Recovering from a Full Disk
+
+When a disk is completely full, you may not be able to log in or run commands.
+If you can get to a shell (recovery mode or SSH):
+
+1. Find the largest files consuming space:
+
+```console
+sudo find / -xdev -type f -size +100M -exec du -ah {} + | sort -hr | head
+```
+
+2. Check for large log files:
+
+```console
+sudo du -ah /var/log/ | sort -hr | head
+```
+
+3. Truncate a large log file without deleting it (preserves the file descriptor
+   for any process still writing to it):
+
+```console
+sudo truncate -s 0 /var/log/syslog
+```
+
+4. Clean up old package caches:
+
+```console
+# Debian/Ubuntu
+sudo apt clean
+
+# CentOS/RHEL
+sudo yum clean all
+```
+
+5. Find and remove old kernels (Debian/Ubuntu):
+
+```console
+dpkg --list 'linux-image-*' | grep ^ii
+sudo apt autoremove --purge
+```
+
+### Rescue an Unbootable System
+
+If the system fails to boot entirely, boot from a live USB (e.g., Ubuntu
+installer) and access your installed system:
+
+1. Identify your root partition:
+
+```console
+sudo fdisk -l
+```
+
+2. Mount it:
+
+```console
+sudo mount /dev/sda1 /mnt
+```
+
+3. If you need to run commands as if booted into the system, bind-mount the
+   necessary filesystems and chroot:
+
+```console
+sudo mount --bind /dev /mnt/dev
+sudo mount --bind /proc /mnt/proc
+sudo mount --bind /sys /mnt/sys
+sudo chroot /mnt
+```
+
+From inside the chroot you can repair GRUB, fix `/etc/fstab`, reinstall
+packages, or run `fsck` on other partitions.
+
+4. When done, exit and unmount:
+
+```console
+exit
+sudo umount /mnt/sys /mnt/proc /mnt/dev /mnt
+```
+
+### Prevention
+
+* Regularly check disks for errors using `smartctl`, `badblocks`, and `fsck`.
 * Keep your system's file system up to date with the latest patches.
 * Use a reliable disk format (e.g., XFS or ext4); use `sudo parted -l` to find out.
+* Set up monitoring or cron jobs for SMART health checks.
+* Keep at least 5-10% of disk space free; consider configuring the ext4 reserved block percentage (`tune2fs -m`).
 
