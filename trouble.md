@@ -2,14 +2,21 @@ Table of Contents
 =================
 
 * [Troubleshooting hosts](#troubleshooting-hosts)
+   * [General approach](#general-approach)
    * [Scenario: High Load Average](#scenario-high-load-average)
+   * [Scenario: High CPU Usage](#scenario-high-cpu-usage)
    * [Scenario: High Memory Usage](#scenario-high-memory-usage)
+   * [Scenario: OOM Killer](#scenario-oom-killer)
    * [Scenario: High iowait](#scenario-high-iowait)
-   * [Scenario: Hostname Resolution Failure](#scenario-hostname-resolution-failure)
    * [Scenario: Out of Disk Space](#scenario-out-of-disk-space)
+   * [Scenario: Inode Exhaustion](#scenario-inode-exhaustion)
+   * [Scenario: Read-Only Filesystem](#scenario-read-only-filesystem)
+   * [Scenario: Hostname Resolution Failure](#scenario-hostname-resolution-failure)
+   * [Scenario: Network Unreachable](#scenario-network-unreachable)
    * [Scenario: Connection Refused](#scenario-connection-refused)
-
-Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
+   * [Scenario: Service Failure](#scenario-service-failure)
+   * [Scenario: Zombie Processes](#scenario-zombie-processes)
+   * [Scenario: Permission Denied](#scenario-permission-denied)
 
 # Troubleshooting hosts
 
@@ -20,6 +27,39 @@ Troubleshooting is the process of analysing the system and rooting out
 potential causes of trouble. Debugging is the process of discovering the cause
 of trouble and possibly implementing steps to remedy it. Debugging can be
 considered a subset of troubleshooting.
+
+## General approach
+
+A systematic approach to troubleshooting avoids wasted effort:
+
+1. **Gather symptoms** — what is the user actually experiencing? Slow response,
+   errors, total outage?
+2. **Check the obvious first** — is the service running? Is the disk full? Is
+   the network up? Simple checks eliminate common causes quickly.
+3. **Reproduce the issue** — can you trigger it on demand? A reproducible
+   problem is far easier to diagnose.
+4. **Narrow the scope** — use `uptime`, `free`, `df`, `ss`, and `journalctl` to
+   quickly classify whether the bottleneck is CPU, memory, disk, network, or
+   application-level.
+5. **Read the logs** — most answers are in the logs. Start with `journalctl -xe`
+   for recent systemd messages or check application-specific logs under
+   `/var/log/`.
+6. **Change one thing at a time** — make a single change, test, and observe.
+   Changing multiple variables at once makes it impossible to know which fix
+   worked.
+7. **Document what you find** — record the root cause and the fix so the next
+   person (or future you) benefits.
+
+A quick first-pass checklist:
+
+```console
+# System overview in one shot
+uptime              # load average
+free -h             # memory / swap
+df -h               # disk space
+ss -tlnp            # listening ports
+journalctl -xe      # recent errors
+```
 
 ## Scenario: High Load Average
 
@@ -43,6 +83,32 @@ Use `top` to launch an interactive real-time dashboard showing system
 information just as CPU usage, load average, memory, and process information.
 This should identify the offending process to which you can further
 investigate.
+
+## Scenario: High CPU Usage
+
+High CPU usage differs from high load average — load includes processes waiting
+on I/O, while CPU usage only reflects compute-bound work.
+
+Use `top` or `htop` and press `P` to sort by CPU. The `%CPU` column shows per-process
+usage; values above 100% are possible on multi-core systems (100% per core).
+
+```console
+# Snapshot of the top CPU consumers
+ps -eo pid,ppid,user,%cpu,%mem,comm --sort=-%cpu | head
+#   PID  PPID USER     %CPU %MEM COMMAND
+# 12345     1 root     99.0  1.2 cpu-hog
+#   672     1 root      2.1  0.5 snapd
+```
+
+For per-core breakdown, use `mpstat` (from `sysstat`):
+
+```console
+mpstat -P ALL 1 5
+# ...per-CPU stats over 5 seconds...
+```
+
+Once you identify the offending process, you can lower its priority with `renice`
+or inspect what it is doing with `strace -p <pid>`.
 
 ## Scenario: High Memory Usage
 
@@ -115,6 +181,40 @@ ps -efly --sort=-rss | head
 # S root  350   1   0  79  -1  7416  12919 -     Jan16 ?   ...  /lib/systemd
 ```
 
+## Scenario: OOM Killer
+
+When the system runs critically low on memory and swap, the kernel's
+Out-Of-Memory (OOM) Killer selects and terminates processes to free memory and
+keep the system alive. This often kills important services with little warning.
+
+Check whether the OOM killer has been active:
+
+```console
+dmesg | grep -i "oom"
+# [12345.678901] Out of memory: Killed process 4321 (my-app) total-vm:...
+
+# Or via journalctl
+journalctl -k | grep -i "oom"
+```
+
+Each process has an OOM score under `/proc/<pid>/oom_score` — higher scores mean
+the process is more likely to be killed. You can influence this via
+`oom_score_adj` (range -1000 to 1000):
+
+```console
+# Make a critical process less likely to be killed
+echo -500 | sudo tee /proc/<pid>/oom_score_adj
+
+# View current score
+cat /proc/<pid>/oom_score
+```
+
+Prevention strategies:
+
+* Add swap space or increase existing swap.
+* Set memory limits on services via systemd (`MemoryMax=` in the unit file).
+* Monitor memory trends so you can act before the OOM killer does.
+
 ## Scenario: High iowait
 
 High iowait is when a host is spending a lot of time waiting for disk I/O. To
@@ -153,6 +253,58 @@ stats in batch mode.
 ```console
 sudo iotop -oPab
 ```
+
+## Scenario: Inode Exhaustion
+
+A filesystem can run out of inodes even when `df -h` shows free space. Each file
+or directory consumes one inode, so millions of tiny files can exhaust the inode
+table.
+
+```console
+# Check inode usage
+df -i
+# Filesystem      Inodes  IUsed   IFree IUse% Mounted on
+# /dev/sda1      6553600 6553600       0  100% /
+
+# Find directories with the most files
+sudo find / -xdev -printf '%h\n' | sort | uniq -c | sort -rn | head
+```
+
+Symptoms look identical to "disk full" — writes fail with `No space left on
+device` — but `df -h` shows plenty of space. Always check `df -i` as well.
+
+Fix by removing unnecessary files (old session files, temp caches, stale logs).
+
+## Scenario: Read-Only Filesystem
+
+A filesystem may be remounted read-only by the kernel when it detects errors
+(e.g., disk corruption or a failing drive). Writes will fail with `Read-only
+file system`.
+
+```console
+# Check mount status
+mount | grep ' / '
+# /dev/sda1 on / type ext4 (ro,relatime)   <-- "ro" means read-only
+
+# Check for filesystem errors in the kernel log
+dmesg | grep -i "error\|readonly\|remount"
+```
+
+If the underlying disk is healthy, you can remount read-write:
+
+```console
+sudo mount -o remount,rw /
+```
+
+If errors are present, run a filesystem check (requires unmounting or booting
+from a rescue disk):
+
+```console
+sudo fsck /dev/sda1
+```
+
+A read-only remount is often a sign of hardware trouble — check `smartctl` from
+the `smartmontools` package to assess drive health.
 
 ## Scenario: Hostname Resolution Failure
 
@@ -213,6 +365,51 @@ sudo find / -type f -size +100M -exec du -ah {} + | sort -hr | head
 Use `lsof` to list open files on a host and can be used to find a process
 writing to a specific file.
 
+## Scenario: Network Unreachable
+
+When a host cannot reach other machines, work from the bottom of the network
+stack upward: link, IP, routing, then DNS.
+
+```console
+# 1. Is the interface up?
+ip link show
+# 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> ...   <-- look for UP
+
+# 2. Does the interface have an IP?
+ip addr show eth0
+
+# 3. Can you reach the gateway?
+ip route show              # find the default gateway
+ping -c 3 <gateway-ip>
+
+# 4. Can you reach an external IP? (bypasses DNS)
+ping -c 3 8.8.8.8
+
+# 5. Can you resolve names? (tests DNS)
+ping -c 3 google.com
+```
+
+If step 4 works but step 5 fails, the problem is DNS (see Hostname Resolution
+Failure below). If step 3 fails, the problem is local networking or the gateway
+itself.
+
+`traceroute` (or `mtr` for a continuous view) shows every hop between you and
+the destination, helping pinpoint where packets are being dropped:
+
+```console
+traceroute 8.8.8.8
+
+# mtr combines ping + traceroute into a live updating display
+mtr 8.8.8.8
+```
+
+Also check whether a firewall is blocking traffic:
+
+```console
+sudo iptables -L -n -v      # legacy iptables
+sudo nft list ruleset        # nftables (newer)
+```
+
 ## Scenario: Connection Refused
 
 Use `curl` to check whether a web server is responding to requests.
@@ -246,4 +443,129 @@ sudo tcpdump -ni any tcp port 8888
 # 502 packets captured
 # 502 packets received by filter
 # 0 packets dropped by kernel
+```
+
+## Scenario: Service Failure
+
+On systemd-based systems, `systemctl` and `journalctl` are the primary tools for
+diagnosing service problems.
+
+```console
+# Check the status of a service (shows active/inactive/failed + recent logs)
+systemctl status nginx
+# ● nginx.service - A high performance web server
+#    Loaded: loaded (/lib/systemd/system/nginx.service; enabled)
+#    Active: failed (Result: exit-code) since ...
+
+# View the full logs for a service
+journalctl -u nginx --no-pager
+
+# Follow logs in real time
+journalctl -u nginx -f
+
+# Show only errors and above
+journalctl -u nginx -p err
+```
+
+Common checks:
+
+* **Is the service enabled?** `systemctl is-enabled nginx` — if `disabled`, it
+  won't start on boot.
+* **Did it crash recently?** `systemctl --failed` lists all failed units on the
+  system.
+* **Configuration error?** Many services have a config-test mode
+  (e.g., `nginx -t`, `apachectl configtest`, `sshd -t`). Run this before
+  restarting.
+
+To restart a failed service:
+
+```console
+sudo systemctl restart nginx
+# then verify
+systemctl status nginx
+```
+
+## Scenario: Zombie Processes
+
+A zombie (defunct) process has finished executing but still has an entry in the
+process table because its parent has not yet read its exit status via `wait()`.
+Zombies consume no CPU or memory but do occupy a PID slot.
+
+```console
+# Find zombie processes
+ps aux | grep 'Z'
+#  USER  PID %CPU %MEM   VSZ  RSS TTY STAT START TIME COMMAND
+#  root 5678  0.0  0.0     0    0 ?   Z    09:10 0:00 [my-app] <defunct>
+```
+
+The `STAT` column shows `Z` for zombies. A handful are usually harmless, but
+a large number can exhaust available PIDs.
+
+To clear zombies, signal the **parent** process (not the zombie itself):
+
+```console
+# Find the parent PID (PPID)
+ps -o pid,ppid,stat,comm -p 5678
+#   PID  PPID STAT COMMAND
+#  5678  1234 Z    my-app
+
+# Ask the parent to reap its children
+kill -SIGCHLD 1234
+
+# If that doesn't work and the parent is misbehaving, killing the parent
+# will cause init/systemd (PID 1) to adopt and reap the zombies
+kill 1234
+```
+
+## Scenario: Permission Denied
+
+"Permission denied" errors fall into several categories:
+
+**File permissions** — the most common case. Check with `ls -la`:
+
+```console
+ls -la /etc/shadow
+# -rw-r----- 1 root shadow 1234 Jan 10 12:00 /etc/shadow
+```
+
+The permission bits are `owner/group/other`. If your user is neither the owner
+nor in the group and the "other" bits don't allow access, you'll get denied.
+
+```console
+# Check which groups you belong to
+id
+# uid=1000(dave) gid=1000(dave) groups=1000(dave),27(sudo)
+
+# Fix by adding your user to the required group (requires logout/login)
+sudo usermod -aG shadow dave
+```
+
+**SELinux / AppArmor** — mandatory access control may block access even when
+regular file permissions allow it. Check with:
+
+```console
+# SELinux (RHEL/CentOS/Fedora)
+getenforce                    # Enforcing, Permissive, or Disabled
+sudo ausearch -m AVC -ts recent
+
+# AppArmor (Debian/Ubuntu)
+sudo aa-status
+journalctl | grep apparmor
+```
+
+**Capabilities and setuid** — some operations require specific Linux
+capabilities rather than full root. For example, binding to port 80 requires
+`CAP_NET_BIND_SERVICE`:
+
+```console
+# Check capabilities on a binary
+getcap /usr/bin/ping
+# /usr/bin/ping cap_net_raw=ep
+```
+
+**Sudoers misconfiguration** — if `sudo` itself denies you, check
+`/etc/sudoers` (always edit via `visudo`):
+
+```console
+sudo -l    # list what commands your user is allowed to run
 ```
