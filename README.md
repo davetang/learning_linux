@@ -21,6 +21,14 @@ Bundle](https://www.humblebundle.com/books/linux-no-starch-press-books) for
 around 40 USD. I'll slowly go through the books and will consolidate all my
 notes here.
 
+## Tips
+
+Scan local network for devices with opened port 22.
+
+```console
+sudo nmap -p 22 --open 192.168.0.1/24
+```
+
 ## Quick notes
 
 * Use `/etc/hosts` to map hostnames to IP addresses. The format is:
