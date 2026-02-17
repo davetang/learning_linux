@@ -70,9 +70,13 @@ setting_vars:
 # rules.
 # https://www.gnu.org/software/make/manual/html_node/Canned-Recipes.html
 
+placeholder:
+	@touch $@
+
 define log_start
 	@echo "=== Starting: $@ ==="
 	@date
+	@echo "Prereq: $<"
 endef
 
 define log_end
@@ -90,12 +94,12 @@ endef
 canned_demo: canned_target_a canned_target_b
 	@echo "Both targets built"
 
-canned_target_a:
+canned_target_a: placeholder
 	$(log_start)
 	$(build_steps)
 	$(log_end)
 
-canned_target_b:
+canned_target_b: placeholder
 	$(log_start)
 	$(build_steps)
 	$(log_end)
@@ -105,4 +109,4 @@ canned_target_b:
 # --------------------------------------------------
 
 clean:
-	@echo "Nothing to clean in this demo"
+	rm placeholder
